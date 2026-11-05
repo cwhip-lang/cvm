@@ -600,7 +600,7 @@ exit 0
                 self.assertIn("missing application-defaults", output)
                 self.assertIn("cwhip_apply_application_defaults", output)
                 self.assertIn("Rebuild and reinstall", output)
-                self.assertIn("chucktilbury/cwhip#21", output)
+                self.assertIn("cwhip-lang/cwhip#21", output)
                 self.assertNotIn("Unknown CMake command", output)
 
     def test_setup_exports_settings_prefix_and_build_type(self):

@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Add `.gitattributes` so GitHub does not label `.cw` files as RedCode.
+- Point repository links at the `cwhip-lang` GitHub organization.
 - Route `cvm-as` and `cvm-run` argv parsing through the SDK `cli` 0.1.0 package
   while preserving existing usage text, exit codes, and option names.
 - Read container and assembly bytes with `text[index]`. After cparsegen runs,
@@ -18,7 +19,7 @@
 
 - Migrate CVM's Cwhip sources and packages to the `numeric-v2` SDK ABI.
   Building now requires Cwhip 0.0.2 with the ABI marker from
-  [chucktilbury/cwhip#25](https://github.com/chucktilbury/cwhip/pull/25).
+  [cwhip-lang/cwhip#25](https://github.com/cwhip-lang/cwhip/pull/25).
   Current builds require native `int64` output from the updated cparsegen.
 - Add backward-compatible integer file services 9..12: `file_open` with
   exact binary `r`/`w`/`a` modes, bounded index-zero `file_read_handle` and
