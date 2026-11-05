@@ -2,7 +2,7 @@
 
 `cvm` is the Cwhip virtual machine: a portable stack VM with a v1 bytecode
 format, assembler, and interpreter. Source:
-[github.com/chucktilbury/cvm](https://github.com/chucktilbury/cvm).
+[github.com/cwhip-lang/cvm](https://github.com/cwhip-lang/cvm).
 
 This directory contains the assembler and runner in `src/`, installable
 packages under `modules/` (`cvm`, `cvmfile`, `cvmrun`), the assembler grammar

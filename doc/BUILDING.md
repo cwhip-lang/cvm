@@ -15,7 +15,7 @@ postfix callable types (`int64<int64>`), and bracket dictionary literals
 source-compatible. No SDK is built, downloaded or overwritten by CVM.
 
 The installed SDK must also provide `cwhip_apply_application_defaults`
-([chucktilbury/cwhip#21](https://github.com/chucktilbury/cwhip/pull/21) or newer).
+([cwhip-lang/cwhip#21](https://github.com/cwhip-lang/cwhip/pull/21) or newer).
 Updating the Cwhip source checkout alone is insufficient: rebuild and reinstall
 the SDK at the selected prefix before configuring CVM. Configuration reports
 that prefix and an actionable error when this capability is missing; it does
