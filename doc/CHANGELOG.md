@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add `.gitattributes` so GitHub does not label `.cw` files as RedCode.
 - Point repository links at the `cwhip-lang` GitHub organization.
 - Route `cvm-as` and `cvm-run` argv parsing through the SDK `cli` 0.1.0 package
   while preserving existing usage text, exit codes, and option names.
