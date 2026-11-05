@@ -48,7 +48,7 @@ endif()
 if(NOT Cwhip_SDK_ABI STREQUAL "numeric-v2")
     message(FATAL_ERROR
         "CVM requires the Cwhip numeric-v2 SDK ABI; selected SDK reports "
-        "'${Cwhip_SDK_ABI}'. Rebuild CVM's Cwhip dependencies with chucktilbury/cwhip#25.")
+        "'${Cwhip_SDK_ABI}'. Rebuild CVM's Cwhip dependencies with cwhip-lang/cwhip#25.")
 endif()
 if(NOT EXISTS "${Cwhip_INCLUDE_DIR}/cwhip/Stdlib.h")
     message(FATAL_ERROR
@@ -64,7 +64,7 @@ if(NOT COMMAND cwhip_apply_application_defaults)
     message(FATAL_ERROR
         "The selected Cwhip SDK at '${Cwhip_PREFIX}' is missing application-defaults "
         "support (cwhip_apply_application_defaults). Rebuild and reinstall an updated "
-        "Cwhip SDK with chucktilbury/cwhip#21 or newer, then configure CVM again.")
+        "Cwhip SDK with cwhip-lang/cwhip#21 or newer, then configure CVM again.")
 endif()
 cwhip_apply_application_defaults()
 
