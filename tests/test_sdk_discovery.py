@@ -783,6 +783,129 @@ exit 0
         output = self.run_configure(setup=True, success=False)
         self.assertIn("CMake configuration failed", output)
 
+    def write_format_stub(self, directory):
+        directory.mkdir(parents=True, exist_ok=True)
+        stub = directory / "cwhip-format"
+        stub.write_text(
+            "#!/bin/sh\n"
+            'printf "invoke\\n" >> "$FORMAT_RECORD"\n'
+            'printf "%s\\n" "$PWD" >> "$FORMAT_RECORD"\n'
+            'printf "%s\\n" "$@" >> "$FORMAT_RECORD"\n'
+        )
+        stub.chmod(0o755)
+        return stub
+
+    def run_make(self, *args, env=None, directory=None):
+        result = subprocess.run(
+            ["make", "-C", str(directory or self.build), *args],
+            cwd=self.root,
+            env=env or self.env,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        return result, result.stdout + result.stderr
+
+    def test_format_target_is_omitted_from_the_default_build(self):
+        self.run_configure()
+        result, output = self.run_make("-n")
+        self.assertEqual(result.returncode, 0, output)
+        self.assertNotIn("format.cmake", output)
+        result, output = self.run_make("-n", "format")
+        self.assertEqual(result.returncode, 0, output)
+        self.assertIn("scripts/format.cmake", output)
+
+    def test_format_target_fails_when_cwhip_format_is_missing(self):
+        self.run_configure()
+        env = self.env.copy()
+        env["PATH"] = "/usr/bin:/bin"
+        result, output = self.run_make("format", env=env)
+        self.assertNotEqual(result.returncode, 0, output)
+        self.assertIn("cwhip-format is not available", output)
+
+    def test_format_target_runs_cwhip_format_on_cw_sources(self):
+        self.run_configure()
+        record = self.root / "format-record.txt"
+        self.write_format_stub(self.root / "tools")
+        (self.build / "assembler").mkdir(parents=True, exist_ok=True)
+        (self.build / "assembler" / "parser.cw").write_text("generated\n")
+        (self.build / "skip-me.cw").write_text("generated\n")
+        (self.project / "src" / "extra.cw").write_text("class Extra {}\n")
+        (self.project / "src" / "build").mkdir()
+        (self.project / "src" / "build" / "nested.cw").write_text("class Nested {}\n")
+        (self.project / "build-notes.cw").write_text("class Notes {}\n")
+        env = self.env.copy()
+        env["FORMAT_RECORD"] = str(record)
+        env["PATH"] = f"{self.root / 'tools'}:/usr/bin:/bin"
+        result, output = self.run_make("format", env=env)
+        self.assertEqual(result.returncode, 0, output)
+        lines = record.read_text().splitlines()
+        self.assertEqual(lines[0], "invoke")
+        self.assertEqual(Path(lines[1]).resolve(), self.project.resolve())
+        self.assertEqual(lines[2], "-i")
+        files = lines[3:]
+        self.assertEqual(files.count("-i"), 0)
+        self.assertIn("src/main.cw", files)
+        self.assertIn("src/extra.cw", files)
+        self.assertIn("src/build/nested.cw", files)
+        self.assertIn("build-notes.cw", files)
+        self.assertIn("modules/cvm/1.0.0/cvm.cw", files)
+        self.assertTrue(all(not path.startswith("build/") for path in files), files)
+        self.assertFalse(any(path.endswith("parser.cw") for path in files), files)
+        self.assertFalse(any(path.endswith("skip-me.cw") for path in files), files)
+        self.assertEqual(lines.count("invoke"), 1)
+
+    def test_format_target_skips_binary_dir_and_named_build_dir(self):
+        binary = self.project / "out"
+        result = subprocess.run(
+            ["cmake", "-S", str(self.project), "-B", str(binary)],
+            cwd=self.root, env=self.env, capture_output=True, text=True, timeout=60,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        record = self.root / "format-record.txt"
+        self.write_format_stub(self.root / "tools")
+        (self.project / "build").mkdir()
+        (self.project / "build" / "stale.cw").write_text("generated\n")
+        (binary / "generated.cw").write_text("generated\n")
+        (self.project / "src" / "keep.cw").write_text("class Keep {}\n")
+        env = self.env.copy()
+        env["FORMAT_RECORD"] = str(record)
+        env["PATH"] = f"{self.root / 'tools'}:/usr/bin:/bin"
+        result, output = self.run_make("format", env=env, directory=binary)
+        self.assertEqual(result.returncode, 0, output)
+        files = record.read_text().splitlines()[3:]
+        self.assertIn("src/keep.cw", files)
+        self.assertIn("src/main.cw", files)
+        self.assertFalse(any(path.startswith("build/") for path in files), files)
+        self.assertFalse(any(path.startswith("out/") for path in files), files)
+        self.assertFalse(any(path.endswith("stale.cw") for path in files), files)
+        self.assertFalse(any(path.endswith("generated.cw") for path in files), files)
+
+    def test_format_target_fails_when_cwhip_format_fails(self):
+        self.run_configure()
+        stub = self.root / "tools" / "cwhip-format"
+        stub.write_text("#!/bin/sh\nexit 3\n")
+        stub.chmod(0o755)
+        env = self.env.copy()
+        env["PATH"] = f"{self.root / 'tools'}:/usr/bin:/bin"
+        result, output = self.run_make("format", env=env)
+        self.assertNotEqual(result.returncode, 0, output)
+        self.assertIn("cwhip-format failed with status 3", output)
+
+    def test_format_target_finds_cwhip_format_in_the_sdk(self):
+        self.run_configure()
+        record = self.root / "format-record.txt"
+        self.write_format_stub(self.fallback / "bin")
+        env = self.env.copy()
+        env["FORMAT_RECORD"] = str(record)
+        env["PATH"] = "/usr/bin:/bin"
+        result, output = self.run_make("format", env=env)
+        self.assertEqual(result.returncode, 0, output)
+        lines = record.read_text().splitlines()
+        self.assertEqual(lines[0], "invoke")
+        self.assertEqual(lines[2], "-i")
+        self.assertIn("src/main.cw", lines)
+
 
 if __name__ == "__main__":
     unittest.main()

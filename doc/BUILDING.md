@@ -206,6 +206,17 @@ versioned `cvm`, `cvmfile`, and `cvmrun` modules under
 `share/cwhip/modules`. The installed runner does not require cparsegen or the
 source tree at runtime.
 
+## Format
+
+From the build directory, `make format` rewrites the repository's `*.cw`
+files in place. In the project shell the same target is `build format`.
+Configuration does not require `cwhip-format`. The target looks for that
+program on `PATH` and in the selected SDK's `bin` directory. If it is
+missing, the target fails and the error names `cwhip-format`. When it is
+present, the target runs `cwhip-format -i` on those sources and skips the
+build directory. The tool reads the root `.cwhip-format` from the repository
+directory. `format` is not part of the default build.
+
 ## Clean
 
 From the project shell, use the retained cleanup script to remove the default

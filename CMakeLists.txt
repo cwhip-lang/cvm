@@ -223,3 +223,14 @@ if(BUILD_TESTING)
     set_tests_properties(cvm_interpreter PROPERTIES
         ENVIRONMENT "CWHIP_SDK=${Cwhip_PREFIX};CVM_BUILD_DIR=${PROJECT_BINARY_DIR}")
 endif()
+
+# Not part of the default build. make format runs this after a normal configure.
+add_custom_target(format
+    COMMAND "${CMAKE_COMMAND}"
+        "-DSOURCE_DIR=${PROJECT_SOURCE_DIR}"
+        "-DBINARY_DIR=${PROJECT_BINARY_DIR}"
+        "-DCWHIP_SDK_BIN=${Cwhip_PREFIX}/bin"
+        -P "${PROJECT_SOURCE_DIR}/scripts/format.cmake"
+    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+    COMMENT "Formatting Cwhip sources with cwhip-format"
+    VERBATIM)
