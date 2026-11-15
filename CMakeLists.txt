@@ -114,17 +114,46 @@ if(NOT CPARSEGEN_EXECUTABLE OR NOT EXISTS "${CPARSEGEN_EXECUTABLE}")
         "CVM assembler requires installed cparsegen. Put it on PATH or set "
         "-DCPARSEGEN_EXECUTABLE=/absolute/path/to/cparsegen (build-time only).")
 endif()
-set(cvm_system_source "${Cwhip_MODULE_DIR}/system/0.1.0/system.cw")
+# Current SDKs define File in file.cw and system.cw only includes it.
+# Older usable SDKs still declare the same methods in system.cw.
+set(cvm_system_dir "${Cwhip_MODULE_DIR}/system/0.1.0")
+set(cvm_system_source "${cvm_system_dir}/system.cw")
+set(cvm_file_source "${cvm_system_dir}/file.cw")
 if(NOT EXISTS "${cvm_system_source}")
-    message(FATAL_ERROR "CVM assembler requires public SDK system/0.1.0 with binary File APIs")
+    message(FATAL_ERROR
+        "CVM requires the public SDK system/0.1.0 package (${cvm_system_source})")
 endif()
-file(READ "${cvm_system_source}" cvm_system_api)
-foreach(method "buffer readBytes\\(int64 size\\)" "buffer readAllBytes\\(\\)" "int64 writeBytes\\(buffer data\\)")
-    if(NOT cvm_system_api MATCHES "${method}")
-        message(FATAL_ERROR
-            "Selected SDK lacks public File binary APIs (Cwhip PR #20 or newer required)")
+set(cvm_file_api "")
+foreach(cvm_file_piece IN ITEMS "${cvm_file_source}" "${cvm_system_source}")
+    if(EXISTS "${cvm_file_piece}")
+        file(READ "${cvm_file_piece}" cvm_file_text)
+        string(APPEND cvm_file_api "${cvm_file_text}\n")
     endif()
 endforeach()
+set(cvm_file_api_labels
+    "buffer readBytes(int64 size)"
+    "buffer readAllBytes()"
+    "int64 writeBytes(buffer data)")
+set(cvm_file_api_patterns
+    "buffer readBytes\\(int64 size\\)"
+    "buffer readAllBytes\\(\\)"
+    "int64 writeBytes\\(buffer data\\)")
+set(cvm_missing_file_apis "")
+list(LENGTH cvm_file_api_labels cvm_file_api_count)
+math(EXPR cvm_file_api_last "${cvm_file_api_count} - 1")
+foreach(cvm_file_api_index RANGE "${cvm_file_api_last}")
+    list(GET cvm_file_api_labels "${cvm_file_api_index}" cvm_file_api_label)
+    list(GET cvm_file_api_patterns "${cvm_file_api_index}" cvm_file_api_pattern)
+    if(NOT cvm_file_api MATCHES "${cvm_file_api_pattern}")
+        list(APPEND cvm_missing_file_apis "${cvm_file_api_label}")
+    endif()
+endforeach()
+if(cvm_missing_file_apis)
+    list(JOIN cvm_missing_file_apis ", " cvm_missing_file_apis_text)
+    message(FATAL_ERROR
+        "Selected SDK system/0.1.0 lacks File binary APIs: ${cvm_missing_file_apis_text}. "
+        "Checked ${cvm_file_source} and ${cvm_system_source}.")
+endif()
 
 set(assembler_work "${PROJECT_BINARY_DIR}/assembler")
 set(assembler_binary "${CWHIP_BIN_DIR}/cvm-as")

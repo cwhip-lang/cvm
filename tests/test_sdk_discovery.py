@@ -116,8 +116,11 @@ class SdkDiscoveryTests(unittest.TestCase):
         )
         system = prefix / "share/cwhip/modules/system/0.1.0"
         system.mkdir(parents=True)
-        (system / "system.cw").write_text(
-            "buffer readBytes(int64 size)\nbuffer readAllBytes()\nint64 writeBytes(buffer data)\n"
+        (system / "system.cw").write_text('include "file.cw"\n')
+        (system / "file.cw").write_text(
+            "buffer readBytes(int64 size)\n"
+            "buffer readAllBytes()\n"
+            "int64 writeBytes(buffer data)\n"
         )
         include = prefix / "include/cwhip"
         include.mkdir(parents=True)
@@ -581,10 +584,56 @@ exit 0
         ))
         self.assertIn("requires installed cparsegen", output)
 
+    def test_split_system_package_with_file_byte_methods_configures(self):
+        package = self.fallback / "share/cwhip/modules/system/0.1.0"
+        system = (package / "system.cw").read_text()
+        file_api = (package / "file.cw").read_text()
+        self.assertIn('include "file.cw"', system)
+        self.assertNotIn("readBytes", system)
+        self.assertIn("buffer readBytes(int64 size)", file_api)
+        self.assertIn("buffer readAllBytes()", file_api)
+        self.assertIn("int64 writeBytes(buffer data)", file_api)
+        self.run_configure()
+
+    def test_monolithic_system_package_with_byte_file_methods_configures(self):
+        package = self.fallback / "share/cwhip/modules/system/0.1.0"
+        (package / "file.cw").unlink()
+        (package / "system.cw").write_text(
+            "buffer readBytes(int64 size)\n"
+            "buffer readAllBytes()\n"
+            "int64 writeBytes(buffer data)\n"
+        )
+        self.run_configure()
+
     def test_old_sdk_without_byte_file_methods_is_rejected(self):
-        api = self.fallback / "share/cwhip/modules/system/0.1.0/system.cw"
-        api.write_text("String readAll()\nint write(String data)\n")
-        self.assertIn("lacks public File binary APIs", self.run_configure(success=False))
+        package = self.fallback / "share/cwhip/modules/system/0.1.0"
+        cases = {
+            "split": ('include "file.cw"\n', "String readAll()\nint64 write(String data)\n"),
+            "monolithic": ("String readAll()\nint64 write(String data)\n", None),
+            "missing readAllBytes": (
+                'include "file.cw"\n',
+                "buffer readBytes(int64 size)\nint64 writeBytes(buffer data)\n",
+            ),
+        }
+        for name, (system_text, file_text) in cases.items():
+            with self.subTest(layout=name):
+                (package / "system.cw").write_text(system_text)
+                file_api = package / "file.cw"
+                if file_text is None:
+                    file_api.unlink(missing_ok=True)
+                else:
+                    file_api.write_text(file_text)
+                output = " ".join(self.run_configure(success=False).split())
+                self.assertIn("lacks File binary APIs", output)
+                self.assertIn("file.cw", output)
+                self.assertIn("system.cw", output)
+                if name == "missing readAllBytes":
+                    self.assertIn("buffer readAllBytes()", output)
+                    self.assertNotIn("buffer readBytes(int64 size)", output)
+                else:
+                    self.assertIn("buffer readBytes(int64 size)", output)
+                    self.assertIn("buffer readAllBytes()", output)
+                    self.assertIn("int64 writeBytes(buffer data)", output)
 
     def test_old_sdk_without_application_defaults_has_actionable_diagnostic(self):
         package = self.fallback / "lib/cmake/Cwhip/CwhipConfig.cmake"

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Accept public File binary APIs from `system/0.1.0/file.cw`. Current SDKs
+  declare `File.readBytes(int64 size)`, `File.readAllBytes()`, and
+  `File.writeBytes(buffer data)` there; `system.cw` only includes that file.
+  Configuration still accepts those signatures in a monolithic `system.cw`
+  and still rejects an SDK that lacks them.
 - Add `.gitattributes` so GitHub does not label `.cw` files as RedCode.
 - Point repository links at the `cwhip-lang` GitHub organization.
 - Route `cvm-as` and `cvm-run` argv parsing through the SDK `cli` 0.1.0 package
