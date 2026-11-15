@@ -160,5 +160,8 @@ stack-depth metadata and actual filesystem failures. Installed library
 regressions remain separate. Linux failure fixtures exercise `/proc/self/mem`
 read errors, `/dev/full` buffered-close and large-write errors, repeated-error
 descriptor cleanup, empty files and a 131,329-byte multichunk round trip.
-The suite also checks old SDK rejection, missing/failed generation with a
-stale parser present, and thousands of separately generated-parser lines.
+That suite checks missing and failed `cparsegen` generation, including a
+stale `parser.cw`, and thousands of separately generated-parser lines. Old
+SDK rejection is checked by `tests/test_sdk_discovery.py`:
+`test_old_sdk_without_byte_file_methods_is_rejected` and
+`test_old_sdk_without_application_defaults_has_actionable_diagnostic`.
