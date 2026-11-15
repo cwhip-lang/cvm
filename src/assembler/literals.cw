@@ -1,4 +1,5 @@
 class Literals {
+    public:
     void fail(String message, int64 row, int64 col) { raise(AssemblyError(message, row, col)) }
 
     int64 digit(int64 byte) {

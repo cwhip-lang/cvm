@@ -1,4 +1,5 @@
 class StackDepth {
+    public:
     void fail(String message, Instruction instruction) {
         raise(AssemblyError(message, instruction.line, instruction.column))
     }

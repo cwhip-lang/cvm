@@ -1,4 +1,5 @@
 class NodeLocation {
+    public:
     AstNode node
     int64 column
     int64 offset
@@ -8,6 +9,7 @@ class NodeLocation {
 }
 
 class SourceLine {
+    public:
     String text
     list columns
     list locations
@@ -136,6 +138,7 @@ class SourceLine {
 }
 
 class SourceText {
+    public:
     void validate(buffer text) {
         int64 index = 0
         int64 row = 1

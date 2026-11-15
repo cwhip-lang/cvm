@@ -7,6 +7,7 @@ import cvmfile as IO
 import cli as Cli
 
 class Assembler {
+    public:
     list functions
     list globals
     list arrays
@@ -291,6 +292,7 @@ class Assembler {
 }
 
 class AssemblerCLI {
+    public:
     String usage() {
         return("usage: cvm-as INPUT.asm -o OUTPUT.cvm")
     }
