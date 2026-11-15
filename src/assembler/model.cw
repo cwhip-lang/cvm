@@ -1,6 +1,7 @@
 import cvm as CVM
 
 class AssemblyError : public Exception {
+    public:
     int64 column
     int64 line
     AssemblyError(String message, int64 row, int64 col) {
@@ -11,6 +12,7 @@ class AssemblyError : public Exception {
 }
 
 class Symbol {
+    public:
     String name
     int64 value
     Symbol(String n, int64 v) {
@@ -20,6 +22,7 @@ class Symbol {
 }
 
 class Instruction {
+    public:
     int64 opcode
     String operand
     int64 line
@@ -37,6 +40,7 @@ class Instruction {
 }
 
 class Function {
+    public:
     String name
     list locals
     buffer types
@@ -62,6 +66,7 @@ class Function {
 }
 
 class ArrayDeclaration {
+    public:
     String name
     int64 owner
     int64 element
@@ -77,6 +82,7 @@ class ArrayDeclaration {
 }
 
 class GlobalDeclaration {
+    public:
     String name
     int64 valueType
     int64 value

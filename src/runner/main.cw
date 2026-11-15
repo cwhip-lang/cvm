@@ -4,6 +4,7 @@ import system as Sys
 import cli as Cli
 
 class RunnerCLI {
+    public:
     int64 parseLimit(String text, int64 maximum, bool allowZero) {
         if (text.length == 0) { return(-1) }
         int64 value = 0
