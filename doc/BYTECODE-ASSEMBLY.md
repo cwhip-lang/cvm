@@ -132,9 +132,15 @@ FUNCS has fixed 28-byte records:
 
 At `type offset`, TYPES contains one type byte per parameter followed by one
 per scalar local. Type 1 is signed i32, 2 is unsigned u8, 3 is opaque file
-handle; type 0 is permitted only as a void return type. Type ranges must fit
-TYPES and may not overlap. Function names are unique. Function-table index
-is the function identifier used by the header entry and `call`. Since
+handle; type 0 is permitted only as a void return type. Each function's
+type bytes must fit TYPES. `validate` and `cvm-run` check that fit and
+accept a range that overlaps another function. The assembler and
+`ContainerBuilder` append type bytes, so files they write do not overlap.
+`validate` requires each function name to be a unique nonempty ASCII
+identifier, NUL-terminated in STRINGS. `cvm-run` requires a NUL-terminated
+ASCII extent and accepts a duplicate or an ASCII non-identifier.
+Function-table index is the function identifier used by the header entry
+and `call`. Since
 `call` and local-array owner indexes are u16, v1 contains at most 65,535
 functions, indexed 0 through 65,534; `0xffff` is reserved for global-array
 ownership. The sum of a function's parameter and scalar-local counts may
@@ -151,8 +157,11 @@ function's local array.
 GLOBALS has 12-byte records:
 `name_string_offset:u32, type:u8, reserved[3], initial_value:i32`.
 Types are i32 or u8; the initial value must fit. The record index is the
-global index encoded by global instructions. Names are unique. Global and
-array table indexes used by instructions are u16, so each table has at most
+global index encoded by global instructions. The assembler and
+`ContainerBuilder.addGlobal` reject a duplicate global name. `validate`
+does not read global records, and `cvm-run` does not read the name offset,
+so two globals with the same name pass both. Global and array
+table indexes used by instructions are u16, so each table has at most
 65,536 records.
 
 ARRAYS has 20-byte records:
@@ -164,12 +173,17 @@ means initialized; other bits are reserved. If initialized,
 `initial_data_offset` is relative to DATA and exactly
 `length * element_width` bytes must fit there (width 4 for i32, 1 for u8).
 If uninitialized, the offset is `0xffffffff` and elements are zeroed.
-Initialized ranges must not overlap. Arrays are mutable. The record index is
-the array index.
+`cvm-run` rejects overlapping initialized ranges at load; `validate` does
+not. The assembler and `ContainerBuilder.addArray` reject a duplicate
+array name. `validate` and `cvm-run` do not read that name, so a duplicate
+already in the container is accepted. Arrays are mutable. The record index
+is the array index.
 
-STRINGS contains NUL-terminated UTF-8 names; each referenced offset must
-start a valid string and terminate within the section. Identifiers are
-ASCII in v1. DEBUG, when present, is a sequence of 20-byte records:
+STRINGS contains NUL-terminated UTF-8 names. `validate` checks each
+function name that way: a nonempty ASCII identifier terminated inside the
+section. Global, array, and DEBUG string offsets are not checked.
+Identifiers are ASCII in v1. DEBUG, when present, is a sequence of 20-byte
+records:
 `function_index:u32, instruction_offset:u32, file_name_string_offset:u32,
 line:u32, column:u32`. Records are ordered by function then instruction
 offset, with no duplicate pair. Offsets must be instruction boundaries;
@@ -565,10 +579,25 @@ indexes outside their tables; unknown or truncated instructions; and branch
 targets outside the function or off an instruction boundary. Function code
 extents are tightly packed and cover CODE. Size arithmetic is checked before
 slicing or indexed reads. Every instruction is encoding- and operand-checked,
-including unreachable code. Call indexes are range-checked. Call signatures,
-global and array record contents, array initializers, data-range overlap,
-DEBUG record contents, and UTF-8 validity are not checked. See the
-[library guide](BYTECODE-LIBRARY.md).
+including unreachable code. Call indexes are range-checked. Function names
+are nonempty ASCII identifiers, NUL-terminated in STRINGS, and duplicates
+are rejected. Call signatures, global and array record contents, array
+initializers, data-range overlap, overlap between function type ranges,
+global and array name strings, DEBUG record contents, and UTF-8 validity
+are not checked. See the [library guide](BYTECODE-LIBRARY.md).
+
+`cvm-run` runs that validator, then `VirtualMachine.load` rejects more
+before any instruction runs. Those are load errors (CLI category `load`,
+exit 1), not structural validation errors. Load rejects a global type other
+than i32 or u8, a u8 initial value outside 0..255, and nonzero global
+reserved bytes. It rejects an array owner that is neither `0xffff` nor a
+function index, an element type other than i32 or u8, flags other than 0
+or 1, a nonpositive length, nonzero reserved bytes, an initialized range
+that does not fit DATA, an uninitialized offset other than `0xffffffff`,
+and overlapping initialized ranges (`array initializer ranges overlap`).
+It also rejects an entry that is not `main() -> i32`. Overlapping function
+type ranges and duplicate global or array names still pass load. Call
+signatures are checked only when the call executes.
 
 The shared validator does not reject stack underflow, type mismatch, invalid
 ArrayRef use, inconsistent stack types or depths at joins, invalid returns,

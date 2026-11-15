@@ -78,9 +78,10 @@ list initializers do not. Any remaining capacity is zero-filled.
 
 The generator's lexer accepts ASCII only. A small source-normalization pass
 validates UTF-8 and rewrites non-ASCII bytes **inside quoted literals** to
-`\xHH` before generated scanning; comment bytes are ignored. It does not
-parse declarations or instructions. A byte-column map preserves original
-diagnostic locations. The generated parser handles a complete logical line
+`\xHH` before generated scanning, including a byte that follows a
+backslash. Non-ASCII comment bytes are replaced with a space. The pass
+does not parse declarations or instructions. A byte-column map preserves
+original diagnostic locations. The generated parser handles a complete logical line
 at a time; the assembler enforces file/function ordering. This avoids
 whole-file parser backtracking budgets. Excessive individual lines still
 fail explicitly with the installed generator's resource-limit diagnostic.

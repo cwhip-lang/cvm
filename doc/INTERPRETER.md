@@ -185,10 +185,21 @@ runtime traps, disabled services, I/O errors, configuration errors, and
 resource exhaustion.
 
 Structural validation and the VM's execution checks are deliberately separate.
-The runner repeats checks on decoded metadata, indexes, types, frame
-transitions, array initialization/extents and instruction reads before use.
-This is defensive execution behavior, not a guarantee that an accepted
-program is safe, and should not be used as a security boundary.
+Before any instruction runs, `VirtualMachine.load` rejects a global type
+other than i32 or u8, a u8 initial value outside 0..255, and nonzero global
+reserved bytes. It rejects an array whose owner is neither `0xffff` nor a
+function index, whose element type is not i32 or u8, whose flags are not 0
+or 1, whose length is not positive, or whose reserved word is nonzero. An
+initialized array must fit in DATA. An uninitialized array's offset must be
+`0xffffffff`. Overlapping initialized ranges fail with `array initializer
+ranges overlap`. The entry must be `main() -> i32`. These are load errors
+(CLI category `load`, exit 1), not structural validation errors. Overlapping
+function type ranges and duplicate global or array names are still accepted.
+Call signatures are checked only when the call executes. The runner also
+repeats checks on decoded metadata, indexes, types, frame transitions, and
+instruction reads before use. This is defensive execution behavior, not a
+guarantee that an accepted program is safe, and should not be used as a
+security boundary.
 
 ## Tests
 

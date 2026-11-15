@@ -28,7 +28,8 @@ those rules do not conflict with this document.
   block indent.
 - Line length should be kept to less than 80 characters to allow clean
   editing on a console.
-- Reflow all comments to the column limit.
+- Reflow hash and slash comments to the column limit. Do not reflow
+  block comments.
 - Put a blank line before and after a control statement longer than
   10 lines. When variables are defined for a test or a loop, keep
   those definitions inside the blank-line boundary, with the
@@ -142,55 +143,28 @@ carry the narrative humans need to read it.
 
 ## User-facing binaries and argv
 
-Operator-facing executables (`cplanets-server`, `cplanets`,
-`cplanets-ai`, `cplanets-tick`, and any later user tools) must parse
-argv with the Cwhip stdlib `cli` package (`import cli as Cli`).
-Include generated help via `-h` / `--help` (`Action.HELP` and
-`helpText()`). Do not hand-roll flag loops for those programs. Unit
-and fn test programs are exempt unless migration is trivial.
+`cvm-as` and `cvm-run` parse argv with the Cwhip stdlib `cli` package
+(`import cli as Cli`). Do not hand-roll flag loops for those programs.
+Each program prints one fixed `usage:` line. `--help` is the only help
+option. It prints that line on stdout and exits 0. Neither program
+calls `helpText()`. A usage error prints the same line on stderr and
+exits 2.
 
-- `--config PATH` is optional on `cplanets-server`, `cplanets`, and
-  `cplanets-ai`. If it is omitted, ensure and load
-  `~/.config/cplanets/…`. `cplanets-tick` still requires `--config`.
-- If `--config` is present but the path is empty, print the same help
-  text as `-h` / `--help` and exit **2** (usage). Explicit `-h` /
-  `--help` still exits **0**.
-- Every other parameter must be settable as a default in that file.
-  Load the file first. Any flag present on argv (`wasProvided`)
-  overrides the file value silently (no warning).
-- Mode flags follow the same rule. The file stores `true` / `false`.
-  Presence on argv forces the switch on.
-- `--config` itself has no in-file key.
-- The server uses one unified `config/server-*.cfg`. That file holds
-  process and network settings and the §14 scenario knobs
-  ([SERVER-CONFIG.md](SERVER-CONFIG.md)).
-- Legacy `setup=` / `--setup` / `spawn_ai_count` /
-  `spawn_ai_template` are rejected and removed.
-- An explicit `--config` that cannot be opened is a hard error (no
-  silent builtin).
-- AI, human, and tick keep their own `--config` surfaces.
-  `config/tick-default.cfg` is a placeholder until advance-N.
-- Key catalogs: [SERVER-CONFIG.md](SERVER-CONFIG.md),
-  [AI-CLIENT-CONFIG.md](AI-CLIENT-CONFIG.md),
-  [HUMAN-CLIENT-CONFIG.md](HUMAN-CLIENT-CONFIG.md).
-- XDG defaults for the server, human, and AI are implemented
-  (CPL-115).
+`cvm-as` usage:
 
-Headless operator programs that emit decision or settings logs use
-one pattern:
+```text
+usage: cvm-as INPUT.asm -o OUTPUT.cvm
+```
 
-- The text file key is `verbosity = N` (default `0`). CLI
-  `--verbosity N` overlays the file when `wasProvided("verbosity")`.
-- The scale is **0–10**. Out-of-range values clamp (not reject).
-- Level `0` is errors-only for optional lines. Higher levels open
-  provisional categories (server: settings about 3, combat about 6,
-  full about 10; AI: decisions about 3, full about 10).
-- Thresholds will firm up over time. Do not invent log spam under
-  reserved bands.
-- Server and AI share the flag and key name. Log payloads differ
-  (combat versus seat, policy, and cycle).
-- Server verbosity defaults live in the server config. They are
-  copied onto `Scenario.verbosity` at serve start.
+`cvm-run` usage:
+
+```text
+usage: cvm-run [--max-program-bytes N] [--max-instructions N] [--max-stack-values N] [--max-call-depth N] [--max-heap-bytes N] [--max-open-files N] [--no-stdin] [--no-stdout] [--no-files] INPUT.cvm
+```
+
+Success exits 0. Assembly, file, validation, load, runtime, and the
+other diagnosed failures exit 1. See [ASSEMBLER.md](ASSEMBLER.md) and
+[INTERPRETER.md](INTERPRETER.md).
 
 ## Formatter defaults
 
@@ -200,6 +174,13 @@ comment-only line, `case`, `default`, a brace that starts a line, and
 `except`, `finally`, and `from` are always applied. They are not keys
 in this dump. `BreakBeforeBinaryOperators`, `BraceBinding`,
 `CommentPragmas`, and `SpaceBeforeParens` stay unset.
+`BinPackParameters` and `BinPackArguments` are parsed and never read.
+Wrapped parameters and arguments stay one item per line either way,
+which is what the guideline above already says. The dump comments on
+those keys are the formatter's own text. `NewlineBeforeCloseBrace`
+defaults to true. `.cwhip-format` omits that key. An omitted key keeps
+the default, so `make format` still puts `}` on its own line. Hash and
+slash comments reflow. Block comments do not.
 
 ```
 # Language of the file. Cwhip is the only accepted value.
