@@ -138,23 +138,23 @@ buffer Literals.quoted(String text, int64 row, int64 col) {
                 if (escape == 114) {
                     byte = 13
                 }
-            else {
+                else {
 
                     if (escape == 116) {
                         byte = 9
                     }
-            else {
+                    else {
 
                         if (escape == 48) {
                             byte = 0
                         }
-            else {
+                        else {
 
                             if (escape == 92 || escape == 34 || escape
                                     == 39) {
                                 byte = escape
                             }
-            else {
+                            else {
 
                                 if (escape == 120) {
                                     if (index + 2 >= text.length - 1) {

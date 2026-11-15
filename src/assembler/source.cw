@@ -121,16 +121,16 @@ SourceLine SourceLine.SourceLine(buffer input, int64 line) {
                 if (byte == 92 && quote != 0) {
                     escaped = true
                 }
-            else {
+                else {
 
                     if (quote == 0 && byte == 59) {
                         comment = true
                     }
-            else {
+                    else {
                         if (quote == 0 && (byte == 34 || byte == 39)) {
                             quote = byte
                         }
-            else {
+                        else {
                             if (byte == quote) {
                                 quote = 0
                             }
@@ -332,12 +332,12 @@ void SourceText.validate(buffer text) {
             if (byte >= 224 && byte <= 239) {
                 width = 3
             }
-        else {
+            else {
 
                 if (byte >= 240 && byte <= 244) {
                     width = 4
                 }
-        else {
+                else {
                     if (byte >= 128 || byte == 0) {
                         raise(AssemblyError(
                                 "invalid UTF-8 source byte",
