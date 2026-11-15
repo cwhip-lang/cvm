@@ -287,6 +287,14 @@ ret.i32 ; UTF-8 comment: café
         diagnostic = self.reject(PREAMBLE + invalid + "\n", "unknown escape")
         expected_column = invalid.encode().index(b"q") + 1
         self.assertIn(f":3:{expected_column}:", diagnostic)
+        # A non-ASCII byte immediately after a backslash stays inside the
+        # literal and is rewritten to \xHH.
+        slash = (
+            PREAMBLE
+            + '.array slash: u8[4] = "\\é"\n.func'
+            + MINIMAL.split(".func", 1)[1])
+        self.assertEqual(
+            sections(self.assemble(slash))[6], "\\é".encode() + b"\0")
 
     def test_reachable_service_arities_stack_maxima_and_forward_calls(self):
         source = PREAMBLE + """.array bytes: u8[8]

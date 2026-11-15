@@ -8,6 +8,7 @@
  * Changelog:
  *   2026-10-22  Initial file.
  *   2026-11-15  Apply the Cwhip coding standard.
+ *   2026-11-15  Rewrite a quoted non-ASCII byte after a backslash.
  */
 
 /*
@@ -86,7 +87,7 @@ SourceLine SourceLine.SourceLine(buffer input, int64 line) {
     while (index < input.length) {
 
         int64 byte = int64(input[index])
-        if (byte >= 128 && quote != 0 && !escaped && !comment) {
+        if (byte >= 128 && quote != 0 && !comment) {
             text.append("\\x")
             text.append(byteSpan(hex, byte / 16, byte / 16 + 1))
             text.append(byteSpan(hex, byte % 16, byte % 16 + 1))

@@ -54,20 +54,24 @@ headers, native shims, or build-time dependency on the CVM source tree.
 The initial validator checks the magic, supported version, fixed header and
 reserved fields, directory order/flags, required sections, exact record and
 byte counts, tightly packed section extents, exact file size, entry index,
-function code extents, function names, instruction opcodes and operand
-truncation, local/global/array/function/service indexes, in-function branch
-targets, and instruction-boundary branch targets. All indexes and extents
-are checked before slicing or indexed reads.
+function code extents, function names (a nonempty ASCII identifier,
+NUL-terminated in STRINGS, with duplicates rejected), instruction opcodes
+and operand truncation, local/global/array/function/service indexes,
+in-function branch targets, and instruction-boundary branch targets. All
+indexes and extents are checked before slicing or indexed reads.
 
 This is **structural validation only**, not a verifier or security boundary.
-It does not yet check global/array record contents and initializers, all string
-references, DEBUG records, UTF-8 validity, data/type range overlap,
-array ownership, call signatures, stack/type dataflow or joins, reachable
-fallthrough, return correctness, maximum stack declarations, or runtime
-behavior. The `cvm` library does not execute bytecode. The separate
-`cvmrun` package defensively checks data it consumes and traps on invalid
-runtime transitions, but is not a verifier or security boundary. Do not treat
-a structurally accepted file as safe to execute.
+It does not yet check global/array record contents and initializers, global,
+array, and DEBUG string references, DEBUG records, UTF-8 validity, data/type
+range overlap, array ownership, call signatures, stack/type dataflow or
+joins, reachable fallthrough, return correctness, maximum stack
+declarations, or runtime behavior. Function-name strings are checked.
+The `cvm` library does not execute bytecode. When `cvmrun` loads a
+container it checks global and array record fields and initializer ranges
+that this validator skips. Those load failures are named in the
+[interpreter guide](INTERPRETER.md). It traps on invalid runtime
+transitions. It is not a verifier or security boundary. Do not treat a
+structurally accepted file as safe to execute.
 
 ## Byte I/O boundary
 
