@@ -555,22 +555,39 @@ host policy, not a filesystem containment mechanism or security sandbox. See
 
 ## 7. Validation, failures, and host policy
 
-The shared validator rejects bad magic/version/header, reserved bits,
-unknown required sections, missing/duplicate sections, invalid ordering,
-file-size mismatches, truncated/overflowing extents/counts, malformed
-strings, invalid names/types/indexes/calls, overlapping function or data
-ranges, invalid array initializers, unknown/truncated instructions,
-out-of-function or non-boundary branches, stack underflow/type mismatch,
-invalid ArrayRef use, inconsistent stack types/depth at joins, invalid
-returns, reachable fallthrough, and incorrect maximum-stack declarations.
-All size arithmetic is checked before slicing or allocation. Every
-instruction is encoding/operand checked, including unreachable code;
-dataflow stack/type checking and exact maximum depth apply to reachable
-instructions. Cycles are allowed and bounded by host instruction budget.
+The shared `ContainerValidator` is structural. It rejects a bad magic,
+unsupported version, or invalid header; reserved header and required-section
+bits; unknown required sections; missing sections; duplicate or
+non-ascending section kinds; a file size that differs from the input length;
+truncated or overflowing extents and counts; invalid function names; invalid
+parameter and local types; local, global, array, function, and service
+indexes outside their tables; unknown or truncated instructions; and branch
+targets outside the function or off an instruction boundary. Function code
+extents are tightly packed and cover CODE. Size arithmetic is checked before
+slicing or indexed reads. Every instruction is encoding- and operand-checked,
+including unreachable code. Call indexes are range-checked. Call signatures,
+global and array record contents, array initializers, data-range overlap,
+DEBUG record contents, and UTF-8 validity are not checked. See the
+[library guide](BYTECODE-LIBRARY.md).
 
-Validation errors occur before execution. Runtime traps include arithmetic
-and conversion failures, bounds errors, invalid handles, I/O errors, and
-host-policy exhaustion. EOF and short writes are ordinary service results.
+The shared validator does not reject stack underflow, type mismatch, invalid
+ArrayRef use, inconsistent stack types or depths at joins, invalid returns,
+reachable fallthrough, or an incorrect maximum-stack declaration. Those are
+not validation errors before execution. A container whose first instruction
+is `pop` is accepted and then fails at run time with `operand stack
+underflow`. The assembler (`src/assembler/stack.cw`) checks reachable depth,
+joins, fallthrough, and return opcodes: underflow, differing depths at
+joins, excessive depth, extra values at return, reachable fallthrough, and
+return opcodes that do not match the declared return type. It does not check
+scalar or ArrayRef types. `cvmrun` checks types and depth while executing,
+and reports a resource-limit failure if execution would exceed the declared
+maximum stack. The full semantic verifier remains future work.
+
+Structural validation errors are reported before execution. Runtime traps
+include arithmetic and conversion failures, bounds errors, stack underflow,
+type mismatch, invalid or expired ArrayRefs, invalid handles, I/O errors,
+and host-policy exhaustion. EOF and short writes are ordinary service
+results. Cycles are allowed and bounded by the host instruction budget.
 Filesystem permissions, path policy, allowed directories, and resource
 limits are host configuration, not portable bytecode guarantees. CVM is
 not a security sandbox; untrusted programs need separately designed and
