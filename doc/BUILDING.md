@@ -5,10 +5,12 @@ the compiler or SDK for you. Use the complete SDK installation prefix, not
 just its `bin/` directory. CMake requires Cwhip SDK version `0.0.2`, the
 `numeric-v2` ABI, and an
 installation that supports configurable application output directories and
-the public binary `File.readBytes`, `readAllBytes`, and `writeBytes` APIs.
-The numeric ABI and public C header are checked during configuration, and
-configuration also checks the binary file API signatures. Use a current SDK
-with parenthesized keyword arguments (`return(value)` and `raise(error)`),
+the public binary `File.readBytes(int64 size)`, `File.readAllBytes()`, and
+`File.writeBytes(buffer data)` APIs. Current SDKs declare those methods in
+`system/0.1.0/file.cw`; `system.cw` includes that file. Configuration accepts
+the same signatures in a monolithic `system.cw` and rejects an SDK that lacks
+them. The numeric ABI and public C header are checked during configuration.
+Use a current SDK with parenthesized keyword arguments (`return(value)` and `raise(error)`),
 string indexing (`text[index]`, with no `String.byteAt` or `String.slice`),
 postfix callable types (`int64<int64>`), and bracket dictionary literals
 (`[key: value]`, `[:]`). An older numeric-v2 SDK is not necessarily

@@ -75,8 +75,9 @@ The codec operates on CWhip `buffer` objects and is independent of file access.
 The separate installable `cvmfile` 1.0.0 package provides `CVMFile.Files.read`
 and `write` over the public SDK's `File.readBytes` and `writeBytes` APIs.
 It handles partial transfers, SDK errors, EOF and explicit resource cleanup
-without converting binary data through String. It requires the SDK binary
-File API addition (Cwhip PR #20 or newer); the pure `cvm` package does not.
+without converting binary data through String. It requires
+`File.readBytes` and `File.writeBytes` from the public system package
+(`system/0.1.0/file.cw` on a current SDK). The pure `cvm` package does not.
 See [the assembler/adapter guide](ASSEMBLER.md#reusable-binary-file-adapter)
 for the result API and failure policy. Installed-consumer tests reload actual
 assembler output and preserve all 256 byte values through files.
